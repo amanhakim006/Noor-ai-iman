@@ -2,8 +2,6 @@ import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
 const getAIClient = () => {
-  // SOLUTION: Vite mein key aise uthayi jati hai
-  // Make sure karein Netlify mein key ka naam 'VITE_GEMINI_API_KEY' ho
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -17,9 +15,10 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   try {
     const ai = getAIClient();
     
-    // Model change kiya hai: 'gemini-1.5-flash' (Ye abhi sabse badhiya chal raha hai)
+    // CHANGE: Aapke kehne mutabik humne yahan 'Gemini 3' model set kiya hai.
+    // Dhyan rahe: Agar 'gemini-3.0-flash' na chale, to 'gemini-3.0-flash-preview' try karein.
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-3.0-flash",
       contents: [
         ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
         { role: 'user', parts: [{ text: prompt }] }
@@ -34,7 +33,7 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
 
   } catch (error) {
     console.error("Gemini API Error:", error);
-    // User ko simple error dikhayenge
-    throw new Error("Connection Error: Netlify se Key connect nahi ho pa rahi.");
+    // Error aane par hum console mein asli naam check karne ko bolenge
+    throw new Error("Model Error: Kya naam sahi hai? Google AI Studio check karein.");
   }
 };
