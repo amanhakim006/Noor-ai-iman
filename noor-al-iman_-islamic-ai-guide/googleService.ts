@@ -27,5 +27,4 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   } catch (error) {
     console.error("Error:", error);
     throw new Error("Internet ya Key check karein.");
-  }
-};
+  
