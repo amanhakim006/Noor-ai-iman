@@ -1,25 +1,25 @@
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
 const getAIClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  // CHANGE 1: Yahan humne sahi variable naam 'GEMINI_API_KEY' daal diya hai
+  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 };
 
 export const sendMessageToGemini = async (prompt: string, history: { role: 'user' | 'model', parts: { text: string }[] }[]) => {
   try {
     const ai = getAIClient();
     
-    // Using gemini-3-flash-preview for balanced speed and reasoning
+    // CHANGE 2: Model ka naam sahi kiya hai (Gemini 1.5 Flash - jo sabse fast aur free hai)
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash", 
       contents: [
         ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
         { role: 'user', parts: [{ text: prompt }] }
       ],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.3, // Lower temperature for more consistent, factual Islamic answers
+        temperature: 0.3,
         topP: 0.8,
         topK: 40,
       },
