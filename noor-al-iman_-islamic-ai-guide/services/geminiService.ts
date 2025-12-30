@@ -1,41 +1,43 @@
-import { GoogleGenAI } from "@google/genai";
+// CHANGE: Hum ab standard library import kar rahe hain
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
 const getAIClient = () => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-  // Safety Check
   if (!apiKey) {
     throw new Error("API Key nahi mili. Netlify settings check karein.");
   }
 
-  return new GoogleGenAI({ apiKey: apiKey });
+  return new GoogleGenerativeAI(apiKey);
 };
 
 export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   try {
-    const ai = getAIClient();
+    const genAI = getAIClient();
     
-    // ✅ CORRECT MODEL: 'gemini-1.5-flash-002'
-    // Ye latest hai, free hai, aur 404 error nahi dega.
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash-002",
-      contents: [
-        ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
-        { role: 'user', parts: [{ text: prompt }] }
-      ],
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
+    // MODEL: 'gemini-1.5-flash' (Ye standard library ke sath makhan ki tarah chalta hai)
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      systemInstruction: SYSTEM_INSTRUCTION 
+    });
+
+    const chat = model.startChat({
+      history: history.map(h => ({
+        role: h.role === 'user' ? 'user' : 'model',
+        parts: h.parts,
+      })),
+      generationConfig: {
         temperature: 0.3,
       },
     });
 
-    return response.text || "Mafi chahte hain, jawab generate nahi ho paya.";
+    const result = await chat.sendMessage(prompt);
+    const response = result.response;
+    return response.text();
 
   } catch (error) {
     console.error("Gemini Error:", error);
-    
-    // Agar latest bhi na chale, to hum user ko saaf bata denge
-    throw new Error("Model Error: Google server connect nahi ho raha. Please try again.");
+    throw new Error("Connection failed. Please try again.");
   }
 };
