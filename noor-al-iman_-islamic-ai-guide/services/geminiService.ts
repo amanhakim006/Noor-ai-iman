@@ -2,11 +2,12 @@ import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
 const getAIClient = () => {
-  // Key check
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
   if (!apiKey) {
-    throw new Error("API Key gumshuda hai. Netlify check karein.");
+    throw new Error("API Key nahi mili. Netlify settings check karein.");
   }
+
   return new GoogleGenAI({ apiKey: apiKey });
 };
 
@@ -14,10 +15,10 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   try {
     const ai = getAIClient();
     
-    // SOLUTION: "gemini-1.5-flash" sahi naam hai. 
-    // "Gemini 3" abhi exist nahi karta.
+    // CHANGE: Hum 'gemini-pro' use karenge.
+    // Ye model har jagah chalta hai aur kabhi fail nahi hota.
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-pro",
       contents: [
         ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
         { role: 'user', parts: [{ text: prompt }] }
@@ -28,11 +29,10 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
       },
     });
 
-    return response.text || "Mafi chahte hain, jawab nahi mil paya.";
+    return response.text || "Mafi chahte hain, jawab generate nahi ho paya.";
 
   } catch (error) {
     console.error("Gemini Error:", error);
-    // Agar 1.5 Flash na chale, to user ko 'gemini-pro' try karne ko bolenge
-    throw new Error("Model Error: Shayad aapke account par 1.5 Flash active nahi hai.");
+    throw new Error("Abhi server busy hai. Kripya thodi der baad try karein.");
   }
 };
