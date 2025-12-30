@@ -1,15 +1,15 @@
 import { SYSTEM_INSTRUCTION } from "../constants";
 
 export const sendMessageToGemini = async (prompt: string, history: any[]) => {
-  // 1. API Key Check
+  // 1. API Key Uthana
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("API Key nahi mili. Netlify settings check karein.");
   }
 
-  // 2. MODEL: Ye wahi latest 'Gemini 3 Flash' hai jo aapne manga.
-  // Note: Code ki duniya mein iska naam 'gemini-2.0-flash-exp' hai.
-  const modelName = "gemini-2.0-flash-exp";
+  // 2. MODEL: Jaisa aapne kaha, Gemini 3 Flash lagaya hai.
+  // Purana '2.0-flash-exp' nikal diya hai.
+  const modelName = "gemini-3.0-flash";
   
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
@@ -38,8 +38,9 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
 
     if (!response.ok) {
         const errorData = await response.json();
-        console.error("Gemini 3 Flash Error:", errorData);
-        throw new Error(`Server Error: ${response.status} - Model connect nahi hua.`);
+        console.error("Gemini 3 Error:", errorData);
+        // Agar error aaye to user ko saaf dikhe
+        throw new Error(`Server Error: ${response.status} - Model Name check karein.`);
     }
 
     const data = await response.json();
