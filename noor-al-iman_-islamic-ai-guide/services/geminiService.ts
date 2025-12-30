@@ -15,10 +15,10 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   try {
     const ai = getAIClient();
     
-    // CHANGE: Hum gemini-2.5 flash' use karenge.
-    // Ye model har jagah chalta hai aur kabhi fail nahi hota.
+    // CHANGE: Hum 'gemini-2.0-flash-exp' use kar rahe hain.
+    // Ye Google ka sabse naya model hai.
     const response = await ai.models.generateContent({
-      model: "gemini-2.5 flash",
+      model: "gemini-2.0-flash-exp",
       contents: [
         ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
         { role: 'user', parts: [{ text: prompt }] }
@@ -33,6 +33,7 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
 
   } catch (error) {
     console.error("Gemini Error:", error);
-    throw new Error("Abhi server busy hai. Kripya thodi der baad try karein.");
+    // Agar ye bhi na chale, to humein 'gemini-pro' par wapas jana padega
+    throw new Error("Model Error: Gemini 2.0 bhi connect nahi ho raha.");
   }
 };
