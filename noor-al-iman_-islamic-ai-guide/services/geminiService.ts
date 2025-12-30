@@ -15,10 +15,10 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   try {
     const ai = getAIClient();
     
-    // CHANGE: Hum 'gemini-2.0-flash-exp' use kar rahe hain.
-    // Ye Google ka sabse naya model hai.
+    // CHANGE: Ye hai Google ka Latest Stable Model (Gemini 1.5 Flash-8B)
+    // Ye 'Free Tier' mein sabse badhiya chalta hai.
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-1.5-flash-8b",
       contents: [
         ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
         { role: 'user', parts: [{ text: prompt }] }
@@ -29,11 +29,12 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
       },
     });
 
-    return response.text || "Mafi chahte hain, jawab generate nahi ho paya.";
+    return response.text || "Jawab generate nahi ho paya.";
 
   } catch (error) {
     console.error("Gemini Error:", error);
-    // Agar ye bhi na chale, to humein 'gemini-pro' par wapas jana padega
-    throw new Error("Model Error: Gemini 2.0 bhi connect nahi ho raha.");
+    
+    // Agar latest wala na chale, to hum user ko purana wala try karne ko bolenge
+    throw new Error("Model Error: 1.5 Flash-8B fail ho gaya. Kya hum 'gemini-pro' try karein?");
   }
 };
