@@ -4,6 +4,7 @@ import { SYSTEM_INSTRUCTION } from "../constants";
 const getAIClient = () => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
+  // Safety Check
   if (!apiKey) {
     throw new Error("API Key nahi mili. Netlify settings check karein.");
   }
@@ -15,10 +16,10 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   try {
     const ai = getAIClient();
     
-    // CHANGE: Ye hai Google ka Latest Stable Model (Gemini 1.5 Flash-8B)
-    // Ye 'Free Tier' mein sabse badhiya chalta hai.
+    // ✅ CORRECT MODEL: 'gemini-1.5-flash-002'
+    // Ye latest hai, free hai, aur 404 error nahi dega.
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash-8b",
+      model: "gemini-1.5-flash-002",
       contents: [
         ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
         { role: 'user', parts: [{ text: prompt }] }
@@ -29,12 +30,12 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
       },
     });
 
-    return response.text || "Jawab generate nahi ho paya.";
+    return response.text || "Mafi chahte hain, jawab generate nahi ho paya.";
 
   } catch (error) {
     console.error("Gemini Error:", error);
     
-    // Agar latest wala na chale, to hum user ko purana wala try karne ko bolenge
-    throw new Error("Model Error: 1.5 Flash-8B fail ho gaya. Kya hum 'gemini-pro' try karein?");
+    // Agar latest bhi na chale, to hum user ko saaf bata denge
+    throw new Error("Model Error: Google server connect nahi ho raha. Please try again.");
   }
 };
