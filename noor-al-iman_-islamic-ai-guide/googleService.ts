@@ -1,4 +1,4 @@
-import { SYSTEM_INSTRUCTION } from "./constants"; // Note: Yahan se '..' hata diya hai
+import { SYSTEM_INSTRUCTION } from "./constants";
 
 export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -24,7 +24,9 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
     if (!response.ok) throw new Error(`Server Error: ${response.status}`);
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || "Jawab nahi aaya.";
+    
   } catch (error) {
     console.error("Error:", error);
     throw new Error("Internet ya Key check karein.");
-  
+  }
+}; 
