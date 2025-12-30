@@ -1,16 +1,18 @@
 import { SYSTEM_INSTRUCTION } from "../constants";
 
+// Ye naya function hai jo Gemini 2.0 Flash (Exp) use karega
 export const sendMessageToGemini = async (prompt: string, history: any[]) => {
-  // 1. API Key Uthana
+  
+  // 1. API Key Check
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("API Key nahi mili. Netlify settings check karein.");
+    throw new Error("API Key nahi mili. Kripya .env file check karein.");
   }
 
-  // 2. MODEL: Jaisa aapne kaha, Gemini 3 Flash lagaya hai.
-  // Purana '2.0-flash-exp' nikal diya hai.
-  const modelName = "gemini-3.0-flash";
+  // 2. MODEL: Aapki pasand ka 'Gemini 2.0 Flash Experimental'
+  const modelName = "gemini-2.0-flash-exp";
   
+  // 3. Direct Connection URL (No Library = No Error)
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
   try {
@@ -21,33 +23,37 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
       },
       body: JSON.stringify({
         contents: [
+          // Pichli history bhejna zaroori hai context ke liye
           ...history.map((h) => ({
             role: h.role === "user" ? "user" : "model",
             parts: h.parts,
           })),
+          // Naya sawal
           { role: "user", parts: [{ text: prompt }] },
         ],
         systemInstruction: {
             parts: [{ text: SYSTEM_INSTRUCTION }]
         },
         generationConfig: {
-          temperature: 0.3,
+          temperature: 0.3, // Thoda smart aur accurate jawab ke liye
         },
       }),
     });
 
     if (!response.ok) {
         const errorData = await response.json();
-        console.error("Gemini 3 Error:", errorData);
-        // Agar error aaye to user ko saaf dikhe
-        throw new Error(`Server Error: ${response.status} - Model Name check karein.`);
+        console.error("Gemini 2.0 Error:", errorData);
+        throw new Error(`Server Error: ${response.status} - Model shayad busy hai.`);
     }
 
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Jawab khali aaya.";
+    
+    // Jawab nikalna
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return text || "Maaf karein, jawab khali aaya.";
 
   } catch (error) {
-    console.error("Connection Error:", error);
-    throw new Error("Connection failed. Internet ya Key check karein.");
+    console.error("Final Connection Error:", error);
+    throw new Error("Internet ya Key connect nahi ho pa rahi.");
   }
 };
