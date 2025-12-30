@@ -1,40 +1,47 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
-const getAIClient = () => {
-  // Key uthana
+export const sendMessageToGemini = async (prompt: string, history: any[]) => {
+  // 1. Key check karna
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("API Key Missing: Netlify settings check karein.");
+    throw new Error("API Key nahi mili");
   }
-  return new GoogleGenerativeAI(apiKey);
-};
 
-export const sendMessageToGemini = async (prompt: string, history: any[]) => {
+  // 2. Direct Internet Call (Koi install ki zaroorat nahi)
+  // Model: gemini-1.5-flash (Fastest & Free)
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
   try {
-    const genAI = getAIClient();
-    
-    // Model: gemini-1.5-flash (Fast & Stable)
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      systemInstruction: SYSTEM_INSTRUCTION 
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          ...history.map((h) => ({
+            role: h.role === "user" ? "user" : "model",
+            parts: h.parts,
+          })),
+          { role: "user", parts: [{ text: prompt }] },
+        ],
+        systemInstruction: {
+            parts: [{ text: SYSTEM_INSTRUCTION }]
+        },
+      }),
     });
 
-    // Chat start karna
-    const chat = model.startChat({
-      history: history.map(h => ({
-        role: h.role === 'user' ? 'user' : 'model',
-        parts: h.parts,
-      })),
-    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Google Error:", errorData);
+        throw new Error(`Server Error: ${response.status}`);
+    }
 
-    // Message bhejna
-    const result = await chat.sendMessage(prompt);
-    const response = await result.response;
-    return response.text();
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
 
   } catch (error) {
-    console.error("Gemini Error:", error);
-    throw new Error("Server connect nahi ho pa raha. Thodi der baad try karein.");
+    console.error("Chat Error:", error);
+    throw new Error("Connection failed. Internet check karein.");
   }
 };
