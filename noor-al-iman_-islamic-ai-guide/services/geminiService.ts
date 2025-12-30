@@ -1,18 +1,25 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
 const getAIClient = () => {
-  // CHANGE 1: Yahan humne sahi variable naam 'GEMINI_API_KEY' daal diya hai
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+  // SOLUTION: Vite mein key aise uthayi jati hai
+  // Make sure karein Netlify mein key ka naam 'VITE_GEMINI_API_KEY' ho
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("API Key nahi mili. Netlify settings check karein.");
+  }
+
+  return new GoogleGenAI({ apiKey: apiKey });
 };
 
-export const sendMessageToGemini = async (prompt: string, history: { role: 'user' | 'model', parts: { text: string }[] }[]) => {
+export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   try {
     const ai = getAIClient();
     
-    // CHANGE 2: Model ka naam sahi kiya hai (Gemini 1.5 Flash - jo sabse fast aur free hai)
-    const response: GenerateContentResponse = await ai.models.generateContent({
-      model: "gemini-1.5-flash", 
+    // Model change kiya hai: 'gemini-1.5-flash' (Ye abhi sabse badhiya chal raha hai)
+    const response = await ai.models.generateContent({
+      model: "gemini-1.5-flash",
       contents: [
         ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
         { role: 'user', parts: [{ text: prompt }] }
@@ -20,14 +27,14 @@ export const sendMessageToGemini = async (prompt: string, history: { role: 'user
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.3,
-        topP: 0.8,
-        topK: 40,
       },
     });
 
-    return response.text || "I apologize, I couldn't generate a response. Please try again.";
+    return response.text || "Mafi chahte hain, jawab generate nahi ho paya.";
+
   } catch (error) {
     console.error("Gemini API Error:", error);
-    throw new Error("Mafi chahte hain, server mein kuch masla hai. Allahu A'lam.");
+    // User ko simple error dikhayenge
+    throw new Error("Connection Error: Netlify se Key connect nahi ho pa rahi.");
   }
 };
