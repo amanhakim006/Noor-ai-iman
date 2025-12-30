@@ -1,43 +1,50 @@
-// CHANGE: Hum ab standard library import kar rahe hain
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
-const getAIClient = () => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-  if (!apiKey) {
+export const sendMessageToGemini = async (prompt: string, history: any[]) => {
+  if (!API_KEY) {
     throw new Error("API Key nahi mili. Netlify settings check karein.");
   }
 
-  return new GoogleGenerativeAI(apiKey);
-};
+  // Hum seedha Google ke address par chithhi bhej rahe hain (No Library)
+  // Model: gemini-1.5-flash (Fast & Free)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   try {
-    const genAI = getAIClient();
-    
-    // MODEL: 'gemini-1.5-flash' (Ye standard library ke sath makhan ki tarah chalta hai)
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      systemInstruction: SYSTEM_INSTRUCTION 
-    });
-
-    const chat = model.startChat({
-      history: history.map(h => ({
-        role: h.role === 'user' ? 'user' : 'model',
-        parts: h.parts,
-      })),
-      generationConfig: {
-        temperature: 0.3,
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        contents: [
+          ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
+          { role: 'user', parts: [{ text: prompt }] }
+        ],
+        systemInstruction: {
+            parts: [{ text: SYSTEM_INSTRUCTION }]
+        },
+        generationConfig: {
+          temperature: 0.3,
+        },
+      }),
     });
 
-    const result = await chat.sendMessage(prompt);
-    const response = result.response;
-    return response.text();
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Google Error:", errorData);
+        throw new Error(`Server Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Jawab nikalna
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return text || "Mafi chahte hain, jawab khali aaya.";
 
   } catch (error) {
-    console.error("Gemini Error:", error);
-    throw new Error("Connection failed. Please try again.");
+    console.error("Final Error:", error);
+    throw new Error("Connection Failed. Internet ya Key check karein.");
   }
 };
