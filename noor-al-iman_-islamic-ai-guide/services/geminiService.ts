@@ -1,50 +1,62 @@
+import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+// 1. Key Uthana
+const getAIClient = () => {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    alert("Error: API Key nahi mili! Netlify settings check karein.");
+    throw new Error("API Key Missing");
+  }
+  
+  return new GoogleGenAI({ apiKey: apiKey });
+};
 
 export const sendMessageToGemini = async (prompt: string, history: any[]) => {
-  if (!API_KEY) {
-    throw new Error("API Key nahi mili. Netlify settings check karein.");
-  }
+  const ai = getAIClient();
+  
+  // 2. Data taiyar karna
+  const contents = [
+    ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
+    { role: 'user', parts: [{ text: prompt }] }
+  ];
 
-  // Hum seedha Google ke address par chithhi bhej rahe hain (No Library)
-  // Model: gemini-1.5-flash (Fast & Free)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+  const config = {
+    systemInstruction: SYSTEM_INSTRUCTION,
+    temperature: 0.3,
+  };
 
   try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
-          { role: 'user', parts: [{ text: prompt }] }
-        ],
-        systemInstruction: {
-            parts: [{ text: SYSTEM_INSTRUCTION }]
-        },
-        generationConfig: {
-          temperature: 0.3,
-        },
-      }),
+    // KOSHISH #1: Gemini 1.5 Flash (Latest)
+    console.log("Trying Gemini 1.5 Flash...");
+    const response = await ai.models.generateContent({
+      model: "gemini-1.5-flash-001", // Exact version name
+      contents: contents,
+      config: config,
     });
+    return response.text;
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Google Error:", errorData);
-        throw new Error(`Server Error: ${response.status}`);
+  } catch (error: any) {
+    console.warn("Flash model failed, trying Pro...", error);
+
+    try {
+      // KOSHISH #2: Gemini Pro (Backup - Ye kabhi fail nahi hota)
+      const response = await ai.models.generateContent({
+        model: "gemini-pro", 
+        contents: contents,
+        config: config,
+      });
+      return response.text;
+
+    } catch (finalError: any) {
+      // Agar sab fail ho jaye, to Screen par Error dikhayein
+      console.error("All models failed:", finalError);
+      
+      // Ye aapko bata dega ki asli galti kya hai bina console khole
+      alert(`Connection Error: ${finalError.message || "Unknown Error"}`);
+      
+      throw new Error("Mafi chahte hain, abhi server connect nahi ho pa raha.");
     }
-
-    const data = await response.json();
-    
-    // Jawab nikalna
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return text || "Mafi chahte hain, jawab khali aaya.";
-
-  } catch (error) {
-    console.error("Final Error:", error);
-    throw new Error("Connection Failed. Internet ya Key check karein.");
   }
 };
