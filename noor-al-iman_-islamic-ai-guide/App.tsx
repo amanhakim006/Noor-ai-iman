@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Message, ChatState } from './types';
-import { sendMessageToGemini } from './services/geminiService';
+import { sendMessageToGemini } from "./src/services/googleService";
 import { SUGGESTED_QUESTIONS } from './constants';
 import ChatMessage from './components/ChatMessage';
 
