@@ -15,10 +15,10 @@ export const sendMessageToGemini = async (prompt: string, history: any[]) => {
   try {
     const ai = getAIClient();
     
-    // CHANGE: Hum 'gemini-pro' use karenge.
+    // CHANGE: Hum gemini-2.5 flash' use karenge.
     // Ye model har jagah chalta hai aur kabhi fail nahi hota.
     const response = await ai.models.generateContent({
-      model: "gemini-pro",
+      model: "gemini-2.5 flash",
       contents: [
         ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
         { role: 'user', parts: [{ text: prompt }] }
